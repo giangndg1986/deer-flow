@@ -1,0 +1,31 @@
+employee_id,name,department,position,salary,age,hire_date,years_experience,gender
+1,Nguyen Van A,IT,Software Engineer,25000000,28,2020-03-15,3,Male
+2,Tran Thi B,HR,HR Manager,35000000,35,2018-07-20,8,Female
+3,Le Van C,Finance,Accountant,22000000,26,2021-01-10,2,Male
+4,Pham Thi D,Marketing,Marketing Specialist,28000000,30,2019-05-12,5,Female
+5,Hoang Van E,IT,Senior Developer,40000000,32,2017-02-28,12,Male
+6,Vo Thi F,Sales,Sales Executive,24000000,27,2020-11-08,3,Female
+7,Dang Van G,Finance,Finance Manager,45000000,38,2015-09-14,15,Male
+8,Ngo Thi H,HR,HR Specialist,26000000,29,2019-12-03,4,Female
+9,Bui Van I,IT,DevOps Engineer,32000000,31,2018-04-22,7,Male
+10,Do Thi K,Marketing,Content Creator,23000000,25,2021-06-18,2,Female
+11,Ly Van L,Sales,Sales Manager,38000000,36,2016-10-05,12,Male
+12,Cao Thi M,Finance,Financial Analyst,27000000,28,2020-01-20,3,Female
+13,Vu Van N,IT,QA Engineer,29000000,30,2019-08-15,6,Male
+14,Duong Thi O,HR,Recruiter,25000000,27,2020-09-12,2,Female
+15,Lam Van P,Marketing,Digital Marketing,31000000,33,2017-11-30,9,Male
+16,Truong Thi Q,Sales,Account Manager,35000000,34,2018-03-08,8,Female
+17,Dinh Van R,IT,Data Analyst,30000000,29,2019-07-25,4,Male
+18,Phan Thi S,Finance,Tax Specialist,26000000,31,2020-04-17,5,Female
+19,Ta Van T,HR,Training Manager,33000000,37,2016-12-22,11,Male
+20,Mai Thi U,Marketing,Brand Manager,36000000,35,2017-06-10,10,Female
+21,Quan Van V,IT,System Admin,28000000,32,2018-11-14,6,Male
+22,Luu Thi W,Sales,Regional Sales,29000000,30,2019-02-28,5,Female
+23,Huynh Van X,Finance,Budget Analyst,24000000,26,2021-03-05,2,Male
+24,Chau Thi Y,HR,Compensation,27000000,33,2018-08-19,7,Female
+25,Tong Van Z,IT,Security Engineer,34000000,34,2017-05-15,9,Male
+26,Doan Thi AA,Marketing,Social Media,22000000,24,2021-09-10,1,Female
+27,Bach Van BB,Sales,Business Dev,37000000,39,2015-04-18,14,Male
+28,Kieu Thi CC,Finance,Audit Manager,42000000,40,2014-07-23,16,Female
+29,Tieu Van DD,IT,Mobile Developer,31000000,28,2019-10-12,4,Male
+30,Ong Thi EE,HR,Employee Relations,28000000,32,2018-12-07,6,Female

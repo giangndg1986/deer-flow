@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 class StepType(str, Enum):
     RESEARCH = "research"
     PROCESSING = "processing"
+    CODE_GENERATION = "code_generation"
+
 
 
 class Step(BaseModel):

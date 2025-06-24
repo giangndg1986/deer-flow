@@ -31,6 +31,8 @@ def continue_to_running_research_team(state: State):
         return "researcher"
     if step.step_type and step.step_type == StepType.PROCESSING:
         return "coder"
+    elif step.step_type and step.step_type == StepType.CODE_GENERATION:
+        return "coder"  # Code generation also uses coder node
     return "planner"
 
 

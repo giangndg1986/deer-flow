@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from typing import Annotated, Literal
+from src.prompts.planner_model import StepType
 
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -19,6 +20,8 @@ from src.tools import (
     get_web_search_tool,
     get_retriever_tool,
     python_repl_tool,
+    create_file_tool,
+    create_folder_tool,
 )
 
 from src.config.agents import AGENT_LLM_MAP
@@ -253,6 +256,8 @@ def reporter_node(state: State, config: RunnableConfig):
     logger.info("Reporter write final report")
     configurable = Configuration.from_runnable_config(config)
     current_plan = state.get("current_plan")
+
+    # Create the basic input for the reporter
     input_ = {
         "messages": [
             HumanMessage(
@@ -261,6 +266,8 @@ def reporter_node(state: State, config: RunnableConfig):
         ],
         "locale": state.get("locale", "en-US"),
     }
+
+    # Apply the reporter template
     invoke_messages = apply_prompt_template("reporter", input_, configurable)
     observations = state.get("observations", [])
 
@@ -272,17 +279,70 @@ def reporter_node(state: State, config: RunnableConfig):
         )
     )
 
-    for observation in observations:
+    # Check if there are any code generation steps and add specific instructions
+    has_code_generation = False
+    if current_plan and current_plan.steps:
+        for step in current_plan.steps:
+            if step.step_type == StepType.CODE_GENERATION and step.execution_res:
+                has_code_generation = True
+                break
+
+    # Add special instructions for software project reports
+    if has_code_generation:
         invoke_messages.append(
             HumanMessage(
-                content=f"Below are some observations for the research task:\n\n{observation}",
+                content="SPECIAL INSTRUCTIONS FOR SOFTWARE PROJECT REPORT:\n\nThis report covers a software development project with generated code. Your report MUST include these additional sections:\n\n## **Generated Project Structure**\n- Show the complete folder and file organization\n- Explain the purpose of each major directory\n- Highlight key configuration files\n\n## **Key Components Analysis**\n- **Frontend Components** (if applicable): List and describe main UI components\n- **Backend Components** (if applicable): Describe API endpoints, services, models\n- **Database Schema** (if applicable): Show table structures and relationships\n- **Configuration Files**: Explain package.json, requirements.txt, config files, etc.\n- **Core Features**: Highlight the main functionalities implemented\n\n## **Technical Implementation**\n- **Technology Stack Used**: List all frameworks, libraries, and tools\n- **Architecture Pattern**: Explain the overall design pattern (MVC, microservices, etc.)\n- **Security Measures**: Describe authentication, authorization, data protection\n- **Performance Considerations**: Caching, optimization, scalability features\n\n## **Setup and Deployment Guide**\n- **Prerequisites**: Required software, versions, system requirements\n- **Installation Steps**: Step-by-step setup instructions\n- **Environment Configuration**: Environment variables, database setup\n- **Running the Application**: How to start and access the application\n- **Testing Instructions**: How to run tests and verify functionality\n\n## **Development Roadmap**\n- **Immediate Next Steps**: Priority improvements and bug fixes\n- **Feature Enhancements**: Potential new features to add\n- **Technical Improvements**: Code refactoring, performance optimizations\n- **Maintenance Considerations**: Regular updates, security patches\n\nUse tables extensively to organize technical information, comparisons, and feature lists. Make the report actionable for developers who will work with this code.",
+                name="system",
+            )
+        )
+
+    # Add observations from research and code generation
+    for i, observation in enumerate(observations):
+        # Determine the source of the observation based on content patterns
+        source_type = "research"
+        if "```" in observation or "def " in observation or "class " in observation:
+            source_type = "code_generation"
+        elif "python" in observation.lower() or "import " in observation:
+            source_type = "data_processing"
+
+        invoke_messages.append(
+            HumanMessage(
+                content=f"Below are {source_type} findings for the research task (Observation {i+1}):\n\n{observation}",
                 name="observation",
             )
         )
+
+    # Add final formatting instructions
+    invoke_messages.append(
+        HumanMessage(
+            content="FINAL FORMATTING REQUIREMENTS:\n\n1. **Use clear section headers** with proper markdown formatting (##, ###)\n2. **Include executive summary** at the beginning for quick overview\n3. **Use tables for all comparative data** - technology comparisons, feature lists, etc.\n4. **Include code snippets** when explaining technical implementations\n5. **Provide actionable recommendations** - not just descriptions but concrete next steps\n6. **Ensure proper citation format** in the References section\n7. **Use bullet points strategically** for lists and key points\n8. **Include visual hierarchy** with proper heading levels\n\nRemember: This report should be comprehensive enough that someone can understand the entire project scope, implementation, and next steps just by reading it.",
+            name="system",
+        )
+    )
+
     logger.debug(f"Current invoke messages: {invoke_messages}")
+
+    # Generate the report
     response = get_llm_by_type(AGENT_LLM_MAP["reporter"]).invoke(invoke_messages)
     response_content = response.content
-    logger.info(f"reporter response: {response_content}")
+
+    logger.info(f"Reporter response generated successfully. Length: {len(response_content)} characters")
+    logger.debug(f"Reporter response preview: {response_content[:500]}...")
+
+    # Add project structure information if code was generated
+    if has_code_generation:
+        try:
+            # Try to get the project structure if files were created
+            project_info = "\n\n---\n\n## Generated Project Files\n\n"
+            project_info += "The following project structure was created during code generation:\n\n"
+
+            # You could add logic here to scan the generated project folder
+            # and append the actual file structure to the report
+
+            response_content += project_info
+            logger.info("Added project structure information to report")
+        except Exception as e:
+            logger.warning(f"Could not add project structure info: {e}")
 
     return {"final_report": response_content}
 
@@ -486,11 +546,30 @@ async def researcher_node(
 async def coder_node(
     state: State, config: RunnableConfig
 ) -> Command[Literal["research_team"]]:
-    """Coder node that do code analysis."""
-    logger.info("Coder node is coding.")
+    """Coder node that handles both data processing and code generation."""
+    logger.info("Coder node is executing.")
+
+    # Determine if this is a code generation task
+    current_plan = state.get("current_plan")
+    current_step = None
+    for step in current_plan.steps:
+        if not step.execution_res:
+            current_step = step
+            break
+
+    # Add file generation tools for code generation tasks
+    tools = [python_repl_tool]
+
+    if current_step and current_step.step_type == StepType.CODE_GENERATION:
+        # Add file generation capabilities
+
+        tools.extend([create_file_tool, create_folder_tool])
+        logger.info("Added file generation tools for code generation task")
+
     return await _setup_and_execute_agent_step(
         state,
         config,
         "coder",
-        [python_repl_tool],
+        tools,
     )
+
