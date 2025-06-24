@@ -4,7 +4,7 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 from src.prompts.planner_model import StepType
-
+import logging
 from .types import State
 from .nodes import (
     coordinator_node,
@@ -17,23 +17,48 @@ from .nodes import (
     background_investigation_node,
 )
 
+logger = logging.getLogger(__name__)
 
 def continue_to_running_research_team(state: State):
+    logger.info("=== ROUTING DEBUG START ===")
     current_plan = state.get("current_plan")
+
     if not current_plan or not current_plan.steps:
+        logger.info("No current plan or steps found, routing to planner")
         return "planner"
+
+    # Check if all steps are completed
     if all(step.execution_res for step in current_plan.steps):
+        logger.info("All steps completed, routing to planner")
         return "planner"
-    for step in current_plan.steps:
+
+    # Find the first unexecuted step
+    current_step = None
+    for i, step in enumerate(current_plan.steps):
         if not step.execution_res:
+            current_step = step
+            logger.info(f"Found unexecuted step {i+1}: {step.title}")
+            logger.info(f"Step type: {step.step_type}")
+            logger.info(f"Step description: {step.description}")
             break
-    if step.step_type and step.step_type == StepType.RESEARCH:
+
+    if not current_step:
+        logger.info("No unexecuted step found, routing to planner")
+        return "planner"
+
+    # Route based on step type - FIX: use current_step instead of step
+    if current_step.step_type and current_step.step_type == StepType.RESEARCH:
+        logger.info("Routing to researcher")
         return "researcher"
-    if step.step_type and step.step_type == StepType.PROCESSING:
+    elif current_step.step_type and current_step.step_type == StepType.PROCESSING:
+        logger.info("Routing to coder (processing)")
         return "coder"
-    elif step.step_type and step.step_type == StepType.CODE_GENERATION:
-        return "coder"  # Code generation also uses coder node
-    return "planner"
+    elif current_step.step_type and current_step.step_type == StepType.CODE_GENERATION:
+        logger.info("Routing to coder (code generation)")
+        return "coder"
+    else:
+        logger.warning(f"Unknown step type: {current_step.step_type}, routing to planner")
+        return "planner"
 
 
 def _build_base_graph():
