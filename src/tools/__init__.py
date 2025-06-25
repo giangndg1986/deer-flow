@@ -11,7 +11,9 @@ from .file_tools import (
     create_file_tool,
     create_folder_tool,
     list_project_structure_tool,
-    get_current_project_path_tool
+    get_current_project_path_tool,
+    finalize_and_zip_project_tool,
+    start_new_project_tool
 )
 from .tts import VolcengineTTS
 
@@ -25,4 +27,6 @@ __all__ = [
     "create_folder_tool",
     "list_project_structure_tool",
     "get_current_project_path_tool",
+    "finalize_and_zip_project_tool",
+    "start_new_project_tool"
 ]

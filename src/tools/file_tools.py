@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Annotated, Optional, Dict
 from langchain_core.tools import tool
 from contextvars import ContextVar
+import zipfile
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,23 @@ def reset_project_session(session_id: Optional[str] = None):
         keys_to_remove = [key for key in _project_folders.keys() if key.startswith(f"{session_id}_")]
         for key in keys_to_remove:
             del _project_folders[key]
+
+def create_zip_file(folder_path: str, zip_path: str) -> bool:
+    """Create a zip file from a folder"""
+    try:
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Create relative path for the zip file
+                    arcname = os.path.relpath(file_path, folder_path)
+                    zipf.write(file_path, arcname)
+
+        logger.info(f"Created zip file: {zip_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Error creating zip file: {str(e)}")
+        return False
 
 @tool
 def create_file_tool(
@@ -214,6 +232,57 @@ def start_new_project_tool(
         logger.error(error_msg)
         return error_msg
 
+
+@tool
+def finalize_and_zip_project_tool(
+    project_name: Annotated[str, "The project name to zip"] = "generated_project"
+) -> str:
+    """Finalize the project and create a downloadable zip file."""
+    try:
+        session_id = get_session_id()
+
+        # Get current project folder
+        project_folder = get_or_create_project_folder(project_name, session_id)
+        project_path = os.path.join(os.getcwd(), "output", project_folder)
+
+        if not os.path.exists(project_path):
+            return f"Error: Project folder '{project_folder}' does not exist."
+
+        # Create zip file
+        zip_filename = f"{project_folder}.zip"
+        zip_path = os.path.join(os.getcwd(), "output", zip_filename)
+
+        success = create_zip_file(project_path, zip_path)
+
+        if success:
+            # Generate download URL (this will be handled by FastAPI endpoint)
+            download_url = f"/api/download/{zip_filename}"
+
+            # Count files in the project
+            file_count = sum([len(files) for _, _, files in os.walk(project_path)])
+
+            return f"""✅ Project successfully finalized and zipped!
+
+📦 **Project Details:**
+- Project Name: {project_name}
+- Folder: {project_folder}
+- Files Created: {file_count}
+- Zip File: {zip_filename}
+
+🔗 **Download Link:**
+{download_url}
+
+📁 **Project Contents:**
+{list_project_structure_tool(project_name)}
+
+The zip file contains your complete project and is ready for download!"""
+        else:
+            return f"Error: Failed to create zip file for project '{project_folder}'"
+
+    except Exception as e:
+        error_msg = f"Error finalizing project: {str(e)}"
+        logger.error(error_msg)
+        return error_msg
 
 # Optional: Cleanup function for old sessions (can be called periodically)
 def cleanup_old_sessions(max_age_hours: int = 24):

@@ -7,6 +7,9 @@ import logging
 import os
 from typing import Annotated, List, cast
 from uuid import uuid4
+from datetime import datetime
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -405,3 +408,152 @@ async def rag_resources(request: Annotated[RAGResourceRequest, Query()]):
     if retriever:
         return RAGResourcesResponse(resources=retriever.list_resources(request.query))
     return RAGResourcesResponse(resources=[])
+
+
+@app.get("/api/download/{filename}")
+async def download_project(filename: str):
+    """Download endpoint for project zip files"""
+    try:
+        # Validate filename (security check)
+        if not filename.endswith('.zip'):
+            raise HTTPException(status_code=400, detail="Invalid file type")
+
+        # Check for path traversal attacks
+        if '..' in filename or '/' in filename or '\\' in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        # Construct file path
+        file_path = os.path.join(os.getcwd(), "output", filename)
+
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # Security check: ensure file is in output directory
+        real_path = os.path.realpath(file_path)
+        output_path = os.path.realpath(os.path.join(os.getcwd(), "output"))
+
+        if not real_path.startswith(output_path):
+            raise HTTPException(status_code=403, detail="Access denied")
+
+        # Create a background task to optionally clean up the file after download
+        def cleanup_file(file_path: str):
+            try:
+                # Optional: Remove file after 1 hour
+                # You can implement this based on your requirements
+                pass
+            except Exception as e:
+                logger.error(f"Error cleaning up file {file_path}: {e}")
+
+        # Return file response
+        return FileResponse(
+            path=file_path,
+            filename=filename,
+            media_type='application/zip',
+            background=BackgroundTask(cleanup_file, file_path)
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in download endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.get("/api/download/info/{filename}")
+async def download_info(filename: str):
+    """Get information about a downloadable file"""
+    try:
+        # Validate filename
+        if not filename.endswith('.zip'):
+            raise HTTPException(status_code=400, detail="Invalid file type")
+
+        if '..' in filename or '/' in filename or '\\' in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        # Construct file path
+        file_path = os.path.join(os.getcwd(), "output", filename)
+
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # Get file info
+        file_stat = os.stat(file_path)
+        file_size = file_stat.st_size
+        created_time = datetime.fromtimestamp(file_stat.st_ctime)
+
+        return {
+            "filename": filename,
+            "size_bytes": file_size,
+            "size_mb": round(file_size / (1024 * 1024), 2),
+            "created": created_time.isoformat(),
+            "download_url": f"/api/download/{filename}"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting file info: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.delete("/api/download/{filename}")
+async def delete_project_file(filename: str):
+    """Delete a project file (admin endpoint)"""
+    try:
+        # Validate filename
+        if not filename.endswith('.zip'):
+            raise HTTPException(status_code=400, detail="Invalid file type")
+
+        if '..' in filename or '/' in filename or '\\' in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        # Construct file path
+        file_path = os.path.join(os.getcwd(), "output", filename)
+
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+
+        # Delete file
+        os.remove(file_path)
+
+        return {"message": f"File {filename} deleted successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+# Optional: List all available downloads
+@app.get("/api/downloads")
+async def list_downloads():
+    """List all available project downloads"""
+    try:
+        output_dir = os.path.join(os.getcwd(), "output")
+
+        if not os.path.exists(output_dir):
+            return {"downloads": []}
+
+        downloads = []
+        for filename in os.listdir(output_dir):
+            if filename.endswith('.zip'):
+                file_path = os.path.join(output_dir, filename)
+                file_stat = os.stat(file_path)
+
+                downloads.append({
+                    "filename": filename,
+                    "size_bytes": file_stat.st_size,
+                    "size_mb": round(file_stat.st_size / (1024 * 1024), 2),
+                    "created": datetime.fromtimestamp(file_stat.st_ctime).isoformat(),
+                    "download_url": f"/api/download/{filename}"
+                })
+
+        # Sort by creation time (newest first)
+        downloads.sort(key=lambda x: x['created'], reverse=True)
+
+        return {"downloads": downloads}
+
+    except Exception as e:
+        logger.error(f"Error listing downloads: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")

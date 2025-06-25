@@ -22,8 +22,10 @@ from src.tools import (
     python_repl_tool,
     create_file_tool,
     create_folder_tool,
+    finalize_and_zip_project_tool,
     list_project_structure_tool,
-    get_current_project_path_tool
+    get_current_project_path_tool,
+    start_new_project_tool
 )
 
 from src.config.agents import AGENT_LLM_MAP
@@ -565,7 +567,7 @@ async def coder_node(
     if current_step and current_step.step_type == StepType.CODE_GENERATION:
         # Add file generation capabilities
 
-        tools.extend([create_file_tool, create_folder_tool])
+        tools.extend([create_file_tool, create_folder_tool, finalize_and_zip_project_tool, list_project_structure_tool, start_new_project_tool])
         logger.info("Added file generation tools for code generation task")
 
     return await _setup_and_execute_agent_step(
