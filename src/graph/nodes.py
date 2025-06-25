@@ -22,6 +22,8 @@ from src.tools import (
     python_repl_tool,
     create_file_tool,
     create_folder_tool,
+    list_project_structure_tool,
+    get_current_project_path_tool
 )
 
 from src.config.agents import AGENT_LLM_MAP

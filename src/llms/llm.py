@@ -9,9 +9,10 @@ from langchain_openai import ChatOpenAI
 
 from src.config import load_yaml_config
 from src.config.agents import LLMType
-
+from src.llms.llm_with_retry import ChatOpenAIWithRetry
 # Cache for LLM instances
-_llm_cache: dict[LLMType, ChatOpenAI] = {}
+#_llm_cache: dict[LLMType, ChatOpenAI] = {}
+_llm_cache: dict[LLMType, ChatOpenAIWithRetry] = {}
 
 
 def _get_env_llm_conf(llm_type: str) -> Dict[str, Any]:
@@ -29,11 +30,12 @@ def _get_env_llm_conf(llm_type: str) -> Dict[str, Any]:
     return conf
 
 
-def _create_llm_use_conf(llm_type: LLMType, conf: Dict[str, Any]) -> ChatOpenAI:
+def _create_llm_use_conf(llm_type: LLMType, conf: Dict[str, Any]) -> ChatOpenAIWithRetry:
     llm_type_map = {
         "reasoning": conf.get("REASONING_MODEL", {}),
         "basic": conf.get("BASIC_MODEL", {}),
         "vision": conf.get("VISION_MODEL", {}),
+        "coding": conf.get("CODING_MODEL", {}),
     }
     llm_conf = llm_type_map.get(llm_type)
     if not isinstance(llm_conf, dict):
@@ -47,12 +49,16 @@ def _create_llm_use_conf(llm_type: LLMType, conf: Dict[str, Any]) -> ChatOpenAI:
     if not merged_conf:
         raise ValueError(f"Unknown LLM Conf: {llm_type}")
 
-    return ChatOpenAI(**merged_conf)
+   # Add retry configuration
+    merged_conf['max_retries'] = int(os.getenv('API_MAX_RETRIES', '3'))
+    merged_conf['base_delay'] = float(os.getenv('API_BASE_DELAY', '1.0'))
+
+    return ChatOpenAIWithRetry(**merged_conf)
 
 
 def get_llm_by_type(
     llm_type: LLMType,
-) -> ChatOpenAI:
+) -> ChatOpenAIWithRetry:
     """
     Get LLM instance by type. Returns cached instance if available.
     """
