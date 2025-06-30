@@ -32,46 +32,33 @@ def continue_to_running_research_team(state: State):
         logger.info("All steps completed, routing to planner")
         return "planner"
 
-    for step in current_plan.steps:
+    # Find the first unexecuted step
+    current_step = None
+    for i, step in enumerate(current_plan.steps):
         if not step.execution_res:
+            current_step = step
+            logger.info(f"Found unexecuted step {i+1}: {step.title}")
+            logger.info(f"Step type: {step.step_type}")
+            logger.info(f"Step description: {step.description}")
             break
 
-    if step.step_type and step.step_type == StepType.RESEARCH:
-        logger.info(f"Routing to researcher: {step.title}")
+    if not current_step:
+        logger.info("No unexecuted step found, routing to planner")
+        return "planner"
+
+    # Route based on step type - FIX: use current_step instead of step
+    if current_step.step_type and current_step.step_type == StepType.RESEARCH:
+        logger.info("Routing to researcher")
         return "researcher"
-    if step.step_type and step.step_type == StepType.PROCESSING:
-        logger.info("Routing to coder")
+    elif current_step.step_type and current_step.step_type == StepType.PROCESSING:
+        logger.info("Routing to coder (processing)")
         return "coder"
-    return "planner"
-
-
-    # # Find the first unexecuted step
-    # current_step = None
-    # for i, step in enumerate(current_plan.steps):
-    #     if not step.execution_res:
-    #         current_step = step
-    #         logger.info(f"Found unexecuted step {i+1}: {step.title}")
-    #         logger.info(f"Step type: {step.step_type}")
-    #         logger.info(f"Step description: {step.description}")
-    #         break
-
-    # if not current_step:
-    #     logger.info("No unexecuted step found, routing to planner")
-    #     return "planner"
-
-    # # Route based on step type - FIX: use current_step instead of step
-    # if current_step.step_type and current_step.step_type == StepType.RESEARCH:
-    #     logger.info("Routing to researcher")
-    #     return "researcher"
-    # elif current_step.step_type and current_step.step_type == StepType.PROCESSING:
-    #     logger.info("Routing to coder (processing)")
-    #     return "coder"
-    # elif current_step.step_type and current_step.step_type == StepType.CODE_GENERATION:
-    #     logger.info("Routing to coder (code generation)")
-    #     return "coder"
-    # else:
-    #     logger.warning(f"Unknown step type: {current_step.step_type}, routing to planner")
-    #     return "planner"
+    elif current_step.step_type and current_step.step_type == StepType.CODE_GENERATION:
+        logger.info("Routing to coder (code generation)")
+        return "coder"
+    else:
+        logger.warning(f"Unknown step type: {current_step.step_type}, routing to planner")
+        return "planner"
 
 
 def _build_base_graph():
@@ -92,7 +79,7 @@ def _build_base_graph():
         continue_to_running_research_team,
         ["planner", "researcher", "coder"],
     )
-    builder.add_edge("reporter", END)
+    # builder.add_edge("reporter", END)
     return builder
 
 

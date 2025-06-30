@@ -267,3 +267,78 @@ interface Plan {
 - For software projects, ensure research covers both what to build (requirements) and how to build it (technical implementation)
 - Include sufficient technical details to enable code generation in subsequent steps
 - Research should cover the complete development lifecycle from planning to deployment
+
+
+# CRITICAL: Software Project Plan Examples
+
+For ANY software development request, you MUST follow these patterns:
+
+## Example 1: Simple Web App Request
+User input: "I want to create a simple web application to manage tasks"
+
+Required output format:
+{
+   "locale": "vi-VN",
+   "has_enough_context": false,
+   "thought": "The user wants to create a web application to manage tasks. It is necessary to analyze functional requirements and technology stack, then generate complete code.",
+   "title": "Develop a web application for task management",
+   "steps": [
+      {
+         "need_search": true,
+         "title": "Research functional requirements for the task management application",
+         "description": "Research basic features of a task management application: create, edit, delete, categorize tasks, user interface design",
+         "step_type": "research"
+      },
+      {
+         "need_search": true,
+         "title": "Research suitable technology stack",
+         "description": "Explore suitable frameworks and technologies for the web app: React/Vue.js, Node.js/Express, database, project structure",
+         "step_type": "research"
+      },
+      {
+         "need_search": false,
+         "title": "Generate code for the task management web application",
+         "description": "Build a complete web application with frontend, backend, and database. Include full CRUD features for task management",
+         "step_type": "code_generation"
+      }
+   ]
+}
+
+## Example 2: Mobile App Request
+User input: "Create a mobile app for food delivery"
+
+Required output format:
+{
+  "locale": "en-US",
+  "has_enough_context": false,
+  "thought": "User wants to create a food delivery mobile application. Need to research requirements and tech stack, then generate complete code.",
+  "title": "Food Delivery Mobile App Development",
+  "steps": [
+    {
+      "need_search": true,
+      "title": "Research food delivery app requirements",
+      "description": "Research core features for food delivery apps: restaurant listings, menu browsing, ordering system, payment integration, delivery tracking",
+      "step_type": "research"
+    },
+    {
+      "need_search": true,
+      "title": "Research mobile development technologies",
+      "description": "Find suitable mobile development frameworks: React Native, Flutter, native development, backend technologies, database solutions",
+      "step_type": "research"
+    },
+    {
+      "need_search": false,
+      "title": "Generate complete mobile app code",
+      "description": "Create full mobile application with all components: UI screens, navigation, API integration, state management, complete project structure",
+      "step_type": "code_generation"
+    }
+  ]
+}
+
+## MANDATORY RULES for Software Projects:
+
+1. **ALWAYS include at least 1 step with `"step_type": "code_generation"`**
+2. **Research steps come first, code generation steps come last**
+3. **Use `"need_search": false` for ALL code_generation steps**
+4. **Use `"need_search": true` for ALL research steps**
+5. **Be specific about what to generate in code_generation steps**

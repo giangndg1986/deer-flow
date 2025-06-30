@@ -61,10 +61,12 @@ def background_investigation_node(state: State, config: RunnableConfig):
         searched_content = LoggedTavilySearch(
             max_results=configurable.max_search_results
         ).invoke(query)
+        ##print("sync", json.dumps(searched_content, indent=2, ensure_ascii=False))
         if isinstance(searched_content, list):
             background_investigation_results = [
                 f"## {elem['title']}\n\n{elem['content']}" for elem in searched_content
             ]
+            #print(f"background_investigation_results: {background_investigation_results}")
             return {
                 "background_investigation_results": "\n\n".join(
                     background_investigation_results
@@ -91,6 +93,10 @@ def planner_node(
     """Planner node that generate the full plan."""
     logger.info("Planner generating full plan")
     configurable = Configuration.from_runnable_config(config)
+    # print(f"state: {state}")
+    # print(f"messages: {state['messages']}")
+    # print(f"background_investigation_results: {state['background_investigation_results']}")
+    # print(f"configurable: {configurable}")
     plan_iterations = state["plan_iterations"] if state.get("plan_iterations", 0) else 0
     messages = apply_prompt_template("planner", state, configurable)
 
@@ -110,6 +116,7 @@ def planner_node(
             }
         ]
 
+    print(f"messages: {messages}")
     if AGENT_LLM_MAP["planner"] == "basic":
         llm = get_llm_by_type(AGENT_LLM_MAP["planner"]).with_structured_output(
             Plan,
@@ -165,10 +172,11 @@ def human_feedback_node(
 ) -> Command[Literal["planner", "research_team", "reporter", "__end__"]]:
     current_plan = state.get("current_plan", "")
     # check if the plan is auto accepted
-    auto_accepted_plan = state.get("auto_accepted_plan", False)
+    auto_accepted_plan = True #state.get("auto_accepted_plan", False)
+   # print(f"current_plan: { state.get("plan_iterations", 0)}")
     if not auto_accepted_plan:
         feedback = interrupt("Please Review the Plan.")
-
+        #print(f"feedback: {feedback}")
         # if the feedback is not accepted, return the planner node
         if feedback and str(feedback).upper().startswith("[EDIT_PLAN]"):
             return Command(
@@ -202,6 +210,7 @@ def human_feedback_node(
         else:
             return Command(goto="__end__")
 
+    #print(f"new_plan: {Plan.model_validate(new_plan)}")
     return Command(
         update={
             "current_plan": Plan.model_validate(new_plan),
