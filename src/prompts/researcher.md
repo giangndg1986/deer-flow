@@ -44,6 +44,7 @@ When the research task is part of a larger software project plan, apply these sp
     - For UI/UX, search for "UI/UX best practices for [application type] dashboard" or "mobile app design patterns".
 
 - **Technology Stack Recommendation**:
+    - Go beyond official marketing. Search for community discussions on platforms like Reddit or Stack Overflow (e.g., "Django vs FastAPI reddit").
     - Look for performance benchmarks, ecosystem maturity, and available talent pool data.
     - Use queries like "[framework] pros and cons", "is [language] good for [use case]".
 
