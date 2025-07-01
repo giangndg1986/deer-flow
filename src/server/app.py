@@ -41,6 +41,7 @@ from src.server.rag_request import (
 from src.server.config_request import ConfigResponse
 from src.llms.llm import get_configured_llm_models
 from src.tools import VolcengineTTS
+from src.tools.file_tools import set_session_id  # If using the ContextVar approach
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,12 @@ async def chat_stream(request: ChatRequest):
     thread_id = request.thread_id
     if thread_id == "__default__":
         thread_id = str(uuid4())
+    try:
+        set_session_id(thread_id)
+    except:
+        # Fallback if ContextVar approach is not used
+        pass
+
     return StreamingResponse(
         _astream_workflow_generator(
             request.model_dump()["messages"],

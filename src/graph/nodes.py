@@ -19,6 +19,12 @@ from src.tools import (
     get_web_search_tool,
     get_retriever_tool,
     python_repl_tool,
+    create_file_tool,
+    create_folder_tool,
+    finalize_and_zip_project_tool,
+    list_project_structure_tool,
+    get_current_project_path_tool,
+    start_new_project_tool
 )
 
 from src.config.agents import AGENT_LLM_MAP
@@ -159,6 +165,7 @@ def human_feedback_node(
     current_plan = state.get("current_plan", "")
     # check if the plan is auto accepted
     auto_accepted_plan = state.get("auto_accepted_plan", False)
+    auto_accepted_plan = True  # TODO: remove this
     if not auto_accepted_plan:
         feedback = interrupt("Please Review the Plan.")
 
@@ -501,4 +508,20 @@ async def coder_node(
         config,
         "coder",
         [python_repl_tool],
+    )
+
+async def coding_generator_node(
+    state: State, config: RunnableConfig
+) -> Command[Literal["reporter"]]:
+    """Coding generator node that handles both data processing and code generation."""
+    logger.info("Coding generator node is executing.")
+
+    tools = [create_file_tool, create_folder_tool, finalize_and_zip_project_tool, list_project_structure_tool, start_new_project_tool]
+    logger.info("Added file generation tools for code generation task")
+
+    return await _setup_and_execute_agent_step(
+        state,
+        config,
+        "coder",
+        tools,
     )

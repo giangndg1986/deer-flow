@@ -7,6 +7,11 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class PlanType(str, Enum):
+    GENERAL_RESEARCH = "general_research"
+    SOFTWARE_PROJECT_CODING = "software_project_coding"
+
+
 class StepType(str, Enum):
     RESEARCH = "research"
     PROCESSING = "processing"
@@ -23,6 +28,10 @@ class Step(BaseModel):
 
 
 class Plan(BaseModel):
+    plan_type: PlanType = Field(
+        default=PlanType.GENERAL_RESEARCH,
+        description="The type of plan, e.g., 'general_research' or 'software_project_coding'",
+    )
     locale: str = Field(
         ..., description="e.g. 'en-US' or 'zh-CN', based on the user's language"
     )
@@ -38,6 +47,7 @@ class Plan(BaseModel):
         json_schema_extra = {
             "examples": [
                 {
+                    "plan_type": "general_research",
                     "has_enough_context": False,
                     "thought": (
                         "To understand the current market trends in AI, we need to gather comprehensive information."

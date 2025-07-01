@@ -80,6 +80,18 @@ Different types of steps have different web search requirements:
   - Numerical analysis must be delegated to processing steps
   - Research steps focus on information gathering only
 
+## Software Project Implementation Framework
+
+When the user's request is to *build* or *create* a software product, apply this framework. This plan will involve both research and coding steps.
+
+1.  **Clarify Requirements & Research (research)**: Fully understand the requirements, target users, and key features. Research existing solutions and technology options. This step is crucial before any code is written.
+2.  **Architecture & High-Level Design (research)**: Research and define the system architecture, data models, and component interactions based on the requirements.
+3.  **Project Scaffolding (coding)**: Set up the initial project structure, including folders, build configurations, and essential dependencies.
+4.  **Implement Core Feature(s) (coding)**: Write the code for the main functionalities of the application. Break this down into smaller coding steps if the feature is complex.
+5.  **Implement Other Features (coding)**: Write code for secondary features, user interface, etc.
+6.  **Testing (coding)**: Create unit tests, integration tests, and end-to-end tests to ensure software quality.
+7.  **Documentation & Deployment (coding)**: Write the README file, add code comments, and prepare deployment scripts.
+
 ## Analysis Framework
 
 When planning information gathering, consider these key aspects and ensure COMPREHENSIVE coverage:
@@ -139,7 +151,8 @@ When planning information gathering, consider these key aspects and ensure COMPR
   - Set `has_enough_context` to true
   - No need to create information gathering steps
 - If context is insufficient (default assumption):
-  - Break down the required information using the Analysis Framework
+  - If the request is about a software project, set `plan_type` to `software_project_coding` and use the **Software Project Implementation Framework**. The plan should include a mix of `research` and `coding` steps.
+  - Otherwise, set `plan_type` to `general_research` and use the general **Analysis Framework**.
   - Create NO MORE THAN {{ max_step_num }} focused and comprehensive steps that cover the most essential aspects
   - Ensure each step is substantial and covers related information categories
   - Prioritize breadth and depth within the {{ max_step_num }}-step constraint
@@ -164,6 +177,7 @@ interface Step {
 }
 
 interface Plan {
+  plan_type: "general_research" | "software_project_coding";
   locale: string; // e.g. "en-US" or "zh-CN", based on the user's language or specific request
   has_enough_context: boolean;
   thought: string;
